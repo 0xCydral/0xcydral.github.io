@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es-VE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Privacidad de Divisa</title>
+  <script>
+    // Sets the theme before the first paint, the way the head script of index.html does. This is the
+    // third reader of the 'divisa.theme' key, beside that script and src/rates/store.ts.
+    // A saved 'light' or 'dark' wins; with none, or an unreadable store, the phone's theme decides.
+    // shortcut: with JavaScript off the page stays light; add a prefers-color-scheme block if the website needs one.
+    (function () {
+      var stored = null;
+      try {
+        stored = localStorage.getItem('divisa.theme');
+      } catch (error) {}
+      var dark = stored === 'dark' || (stored !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    })();
+  </script>
+  <style>
+    /* This file is the whole page: the owner also hosts it on a website, with no stylesheet beside it.
+       The colours are copied from the app's tokens in src/styles.css, so a change there is found by
+       searching for the token's name here: --color-bg, --color-surface-2, --color-text, --color-text-muted,
+       --color-primary, --action (the app's --accent-ink) and --line, with their dark values from
+       :root[data-theme="dark"]. The page is one surface, as the calculator is (ADR 0012): no coloured field.
+       The typeface is the app's, with a system fallback where the file is missing. */
+    @font-face {
+      font-family: "Geist";
+      src: url("/fonts/Geist.woff2") format("woff2");
+      font-weight: 100 900;
+      font-display: swap;
+    }
+
+    :root {
+      color-scheme: light;
+      --safe-top: env(safe-area-inset-top, 0px);
+
+      --color-bg: oklch(0.991 0 0);
+      --color-surface-2: oklch(0.973 0 0);
+      --color-text: oklch(0.205 0.006 271.1);
+      --color-text-muted: oklch(0.46 0.005 286.2);
+      --color-primary: oklch(0.567 0.159 275.2);
+      --field: var(--color-bg);
+      --on-field: var(--color-text);
+      --tint-hi: var(--color-text);
+      --field-fill: var(--color-surface-2);
+      --action: oklch(0.47 0.17 275);
+      --line: color-mix(in oklab, var(--color-text) 10%, transparent);
+
+      /* The press feedback of the app's buttons, copied from --quick and --ease-out in src/styles.css. */
+      --quick: 120ms;
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+
+      --color-bg: oklch(0.139 0.003 246.3);
+      --color-surface-2: oklch(0.182 0.003 248);
+      --color-text: oklch(0.978 0 0);
+      --color-text-muted: oklch(0.7 0 0);
+      --color-primary: oklch(0.72 0.13 275);
+      --action: oklch(0.82 0.1 275);
+      --line: color-mix(in oklab, var(--color-text) 14%, transparent);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--color-bg);
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font: 450 16px/1.5 "Geist", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* About 70 characters a line on a wide screen; on a phone the text takes the width minus the gutters. */
+    .wrap {
+      width: 100%;
+      max-width: 38rem;
+      margin: 0 auto;
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+    }
+
+    /* The transparent status bar sits on the page colour, as in the app (src/styles.css). */
+    .status-guard {
+      position: fixed;
+      z-index: 100;
+      inset: 0 0 auto;
+      height: var(--safe-top);
+      background: var(--field);
+    }
+
+    .field {
+      padding: max(12px, var(--safe-top)) 0 8px;
+      background: var(--field);
+      color: var(--on-field);
+    }
+
+    .back {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0 14px 0 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 12px;
+      background: var(--field-fill);
+      color: var(--tint-hi);
+      font-size: 14px;
+      font-weight: 550;
+      text-decoration: none;
+    }
+
+    .back::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      margin-left: 4px;
+      border-left: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      transform: rotate(45deg);
+    }
+
+    .back {
+      transition: transform var(--quick) var(--ease-out), opacity var(--quick) var(--ease-out);
+    }
+
+    .back:active {
+      opacity: 0.7;
+    }
+
+    /* The browser cross-fades between this page and the calculator, as src/styles.css asks too;
+       with reduced motion the pages just change and the button does not scale. */
+    @media (prefers-reduced-motion: no-preference) {
+      @view-transition {
+        navigation: auto;
+      }
+
+      .back:active {
+        transform: scale(0.96);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .back {
+        transition: none;
+      }
+    }
+
+    h1 {
+      margin: 20px 0 0;
+      font-size: 28px;
+      font-weight: 650;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+
+    /* The text, on the same surface as the header. */
+    .sheet {
+      position: relative;
+      flex: 1;
+      padding: 12px 0 calc(40px + env(safe-area-inset-bottom));
+      background: var(--color-bg);
+    }
+
+    h2 {
+      margin: 28px 0 8px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+      font-size: 19px;
+      font-weight: 650;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+    }
+
+    p,
+    ul {
+      margin: 0 0 14px;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    li::marker {
+      color: var(--color-text-muted);
+    }
+
+    /* The date at the end. */
+    .sheet p:last-child {
+      font-size: 14px;
+      color: var(--color-text-muted);
+    }
+
+    /* A link inside a sentence is a 44px target: 24px of line plus 10px above and below, with the
+       same 10px taken back in the margin so the lines of text keep their spacing. */
+    .sheet a {
+      display: inline-block;
+      padding: 10px 0;
+      margin: -10px 0;
+      line-height: 24px;
+      color: var(--action);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    /* The app's two-ring focus: a 2px gap in the surface colour, then a 2px ring. */
+    a:focus-visible {
+      outline: none;
+      border-radius: 6px;
+      box-shadow: 0 0 0 2px var(--ring-gap, var(--color-bg)), 0 0 0 4px var(--ring, var(--action));
+    }
+
+    .field a:focus-visible {
+      --ring-gap: var(--field);
+      --ring: var(--color-primary);
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="status-guard" data-testid="status-guard" aria-hidden="true"></div>
+  <header class="field">
+    <div class="wrap">
+      <a class="back" href="/" data-testid="back">Volver</a>
+      <h1>Privacidad de Divisa</h1>
+    </div>
+  </header>
+  <main class="sheet">
+    <div class="wrap">
+  <p>Esta página explica qué hace Divisa con tus datos. El mismo texto va dentro de la app y en el sitio web de Cydral Labs.</p>
+
+  <h2>Quién responde</h2>
+  <p>El responsable es Cydral Labs. Si tienes una pregunta sobre esta página, escribe a <a href="mailto:cydral.apps@gmail.com">cydral.apps@gmail.com</a>.</p>
+
+  <h2>Qué queda en tu teléfono</h2>
+  <p>Divisa no tiene cuenta ni registro. No tiene un servidor propio y no usa analítica propia. La app no recoge datos para enviárnoslos.</p>
+  <p>En el teléfono se guarda esto:</p>
+  <ul>
+    <li>Las últimas tasas que consultó la app, con su fecha.</li>
+    <li>Las compras de dólares que anotas en Billetera: cuánto compraste, a qué tasa y qué día. También tu saldo en bolívares, si lo anotas.</li>
+    <li>Si elegiste el tema claro u oscuro, y si dejaste abierto el detalle.</li>
+  </ul>
+  <p>Los precios que escribes en la calculadora no se guardan. Nada de esto sale del teléfono.</p>
+
+  <h2>Las tasas que consulta</h2>
+  <p>Cuando hay conexión, la app pide la tasa BCV dólar y la tasa BCV euro al sitio del BCV (www.bcv.org.ve) y, de respaldo, a DolarApi (ve.dolarapi.com) y a bcv.today. Pide también un promedio de cinco anuncios públicos de USDT a bolívares en p2p.binance.com. Esos servicios reciben la dirección IP del teléfono, como cualquier página web.</p>
+  <p>Esas cifras son tasas referenciales. Divisa es independiente. No tiene relación con el BCV, con Binance, con DolarApi ni con bcv.today. No mueve dinero y no cobra pagos.</p>
+
+  <h2>Anuncios de Google</h2>
+  <p>Abajo de la pantalla hay un anuncio pequeño de Google. Se oculta mientras escribes. No hay anuncios de pantalla completa.</p>
+  <p>El software de anuncios de Google recoge y comparte datos por su cuenta, para mostrar anuncios, medirlos y prevenir fraude:</p>
+  <ul>
+    <li>La dirección IP, que puede usarse para estimar una zona general, no un punto exacto.</li>
+    <li>Cómo usas la app, por ejemplo cuándo la abres y qué tocas.</li>
+    <li>Datos de funcionamiento, como el tiempo de apertura, si la app se traba y el uso de batería.</li>
+    <li>Identificadores del teléfono y de la cuenta: el ID de publicidad de Android, el ID del conjunto de apps y, si aplica, identificadores de una cuenta ya iniciada en el teléfono.</li>
+  </ul>
+  <p>Esos datos van cifrados en el camino. Google explica el uso con sus socios en <a href="https://policies.google.com/technologies/partner-sites">tecnologías de sitios asociados</a> y en su <a href="https://policies.google.com/privacy">política de privacidad</a>.</p>
+  <p>No te pedimos un formulario de consentimiento. La app se distribuye fuera del Espacio Económico Europeo, el Reino Unido y Suiza. Los anuncios pueden ser personalizados según la configuración de anuncios de tu cuenta de Google y de Android.</p>
+
+  <h2>Cómo limitas la publicidad</h2>
+  <p>En el teléfono abre Ajustes, entra en Google y luego en Anuncios. Ahí puedes desactivar la personalización de anuncios y restablecer o borrar el ID de publicidad.</p>
+
+  <h2>Edad</h2>
+  <p>Divisa no está dirigida a menores de 13 años.</p>
+
+  <h2>Cómo borras lo guardado</h2>
+  <p>En los ajustes de Android, borra los datos de Divisa, o desinstala la app. Con eso se van las tasas guardadas, las compras que anotaste, tu saldo en bolívares y lo que elegiste en la app. Una compra sola se borra en Billetera. Cydral Labs no tiene una copia de esos datos en un servidor.</p>
+  <p>El ID de publicidad se borra o se restablece en Ajustes, Google, Anuncios. Esa parte la guarda Google, no Cydral Labs.</p>
+
+  <h2>Cambios</h2>
+  <p>Si este texto cambia, cambia la fecha de abajo. La página nueva reemplaza a esta en el sitio web y en la siguiente versión de la app.</p>
+  <p>15 de noviembre de 2026</p>
+    </div>
+  </main>
+</body>
+</html>
